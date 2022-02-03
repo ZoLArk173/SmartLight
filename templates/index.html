@@ -1,0 +1,133 @@
+<html>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-size: 3em;
+        }
+        .attribute {
+            display: flex;
+            /* align-items: center; */
+            /* justify-content: center; */
+            margin: auto;
+            
+        }
+        .attName, .attVal {
+            padding: 5px;
+        }
+    </style>
+
+    <head>
+        <title>Smart Light</title>
+    </head>
+
+    <body>
+        <div class="attribute">
+            <div class="attName"> Power: </div>
+            <div class="attVal", id="powerState">  </div>
+        </div>
+        <div class="attribute">
+            <div class="attName"> Brightness: </div>
+            <div class="attVal", id="lightBright">  </div>
+        </div>
+        <div class="attribute">
+            <div class="attName"> Present: </div>
+            <div class="attVal", id="presentState">  </div>
+        </div>
+        <div class="attribute">
+            <div class="attName"> Mode: </div>
+            <div class="attVal", id="modeState">  </div>
+        </div>
+    </body>
+
+    <script>
+        mode = ["white", "candle"];
+        modeIndex = 0;
+        let DOMpowerState = document.getElementById("powerState");
+        let DOMbody = document.querySelector('body');
+        let DOMlightBright = document.getElementById("lightBright");
+        let DOMmodeState = document.getElementById("modeState")
+        let pause = 0;
+        let counter = 0;
+
+        DOMpowerState.innerHTML = "ON"
+        DOMmodeState.innerHTML = "white"
+        
+        fetch("https://zolark173.com/on/");
+        fetch("https://zolark173.com/setMode/", {
+            method: "POST",
+            body: JSON.stringify({value: "white"}),
+        })
+
+
+        window.onSoliEvent = function (event) {
+            
+            if (pause == 0 && event.type == 'tap') {
+                if (DOMpowerState.innerHTML == "OFF") {
+                    DOMpowerState.innerHTML = "ON";
+                    DOMbody.style.color = "#fff";
+                    fetch("https://zolark173.com/on/");
+                } else {
+                    DOMpowerState.innerHTML = "OFF";
+                    DOMbody.style.color = "#333"
+                    fetch("https://zolark173.com/off/");
+                }
+                
+            }
+
+            if (pause == 0 && DOMpowerState.innerHTML == "ON" && event.type == 'reach' && event.data.detected == true) {
+                if (event.data.distance != 4294967040) {
+                    let dist = event.data.distance;
+                    dist = (dist - 0.05) * 4 * 100;
+                    dist = Math.round(dist);
+                    if (dist > 100) dist = 100;
+                    else if (dist < 0) dist = 0;
+                    DOMlightBright.innerHTML = dist;
+
+                    let data = {value: dist};
+                    fetch("https://zolark173.com/setBrightness/", {
+                        method: "POST",
+                        body: JSON.stringify(data),
+                    })
+
+                }
+            }
+
+            if (pause == 0 && DOMpowerState.innerHTML == "ON" && event.type == 'swipe') {
+                if (event.data.direction == 1) {
+                    modeIndex++;
+                    if (modeIndex >= mode.length) modeIndex = 0;
+                } else if (event.data.direction == 5) {
+                    modeIndex--;
+                    if (modeIndex < 0) modeIndex = mode.length - 1;
+                }
+                DOMmodeState.innerHTML = mode[modeIndex]
+                fetch("https://zolark173.com/setMode/", {
+                    method: "POST",
+                    body: JSON.stringify({value: mode[modeIndex]}),
+                })
+            }
+            
+            let presentState = document.getElementById("presentState");
+            // presentState.innerHTML = "NO";
+            if (event.type == 'presence' && DOMpowerState.innerHTML == "ON") {
+                let dist = event.data.distance;
+                if (dist == 0) {
+                    counter++;
+                    if (counter > 5 && pause == 0) {
+                        pause = 1;
+                        fetch("https://zolark173.com/off/");
+                    }
+                }
+                else {
+                    if (pause == 1) fetch("https://zolark173.com/on/");
+                    pause = 0;
+                    counter = 0;
+                }
+                presentState.innerHTML = dist;
+                
+            }
+        }
+
+    </script>
+</html>
