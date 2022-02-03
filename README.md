@@ -1,5 +1,5 @@
 # SmartLight
-Control smart bulb via hand gestures with Google Pixel 4 Soli rader.
+Control smart bulb via hand gestures with Google Pixel 4 Soli radar.
 
 # Controls
 - `Tap` to turn on or off the light.
